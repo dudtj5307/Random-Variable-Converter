@@ -159,20 +159,4 @@ QSplitter::handle {{
     background: {BORDER_COLOR};
     width: 1px;
 }}
-QScrollBar:vertical {{
-    background: {PANEL_BG};
-    width: 12px;
-    border-radius: 4px;
-}}
-QScrollBar::handle:vertical {{
-    background: {BORDER_COLOR};
-    border-radius: 4px;
-    min-height: 20px;
-}}
-QScrollBar::handle:vertical:hover {{
-    background: {TEXT_MUTED};
-}}
-QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
-    height: 0;
-}}
 """

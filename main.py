@@ -6,6 +6,7 @@ from PyQt6.QtGui import QColor, QPalette
 from gui import MainWindow
 from gui.style import DARK_BG, PANEL_BG, TEXT_PRIMARY
 
+LAST_UPDATE, VERSION = "2026.03.20", "BETA"
 
 def main() -> None:
     app = QApplication(sys.argv)
@@ -28,4 +29,11 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    print("ⓒ 2026,LIG Nex1, YoungSuh Lee, All rights reserved.")
+    print(f"Last Revision : {VERSION} Distributed on {LAST_UPDATE} ")
+    print("\nInit Complete & GUI created!")
+    try:
+        main()
+    except Exception as e:
+        print(e)
+

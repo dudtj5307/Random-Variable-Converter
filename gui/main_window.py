@@ -107,10 +107,6 @@ class MainWindow(QMainWindow):
         title_col.addWidget(app_title)
         title_col.addWidget(subtitle)
 
-        badge = QLabel("SECURE MODE")
-        badge.setObjectName("badge")
-        badge.setFixedHeight(22)
-
         self.btn_convert = QPushButton("익명화 ⟶")
         self.btn_convert.setObjectName("convertBtn")
         self.btn_convert.setFixedHeight(40)
@@ -129,11 +125,13 @@ class MainWindow(QMainWindow):
         self.btn_clear.clicked.connect(self._on_clear)
 
         header.addLayout(title_col)
+        header.addSpacing(16)
+        header.addWidget(self.btn_convert)
         header.addStretch()
-        header.addWidget(badge)
+
+        header.addWidget(self.btn_restore)
         header.addSpacing(12)
-        for btn in [self.btn_convert, self.btn_restore, self.btn_clear]:
-            header.addWidget(btn)
+        header.addWidget(self.btn_clear)
 
         return header
 
