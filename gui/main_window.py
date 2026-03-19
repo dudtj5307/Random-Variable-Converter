@@ -2,24 +2,74 @@ from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
     QPushButton, QLabel, QTableWidget, QTableWidgetItem,
     QHeaderView, QSplitter, QFrame, QStatusBar,
+    QStyle, QStyleOptionButton,
 )
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont, QColor
+from PyQt6.QtCore import Qt, QRect
+from PyQt6.QtGui import QFont, QColor, QPainter
 import re
 
 from gui.style import ACCENT, ORANGE, BORDER_COLOR, GREEN, DARK_BG, TEXT_PRIMARY, PANEL_BG, TEXT_MUTED, STYLE
 from gui.widgets import make_code_panel
 from utils import anonymize_code, restore_code
 
-_COL_CHECK = 0   # 체크박스 컬럼
-_COL_ORIG  = 1   # ORIGINAL 컬럼
-_COL_ALIAS = 2   # ANONYMIZED 컬럼
+_COL_CHECK = 0
+_COL_ORIG  = 1
+_COL_ALIAS = 2
+
+
+class CheckableHeader(QHeaderView):
+    """
+    0번 컬럼 헤더에 체크박스를 그려 전체 선택/해제를 토글합니다.
+    """
+
+    def __init__(self, parent: QTableWidget) -> None:
+        super().__init__(Qt.Orientation.Horizontal, parent)
+        self._checked = True
+        self.setSectionsClickable(True)
+        self.sectionClicked.connect(self._on_section_clicked)
+
+    def paintSection(self, painter: QPainter, rect: QRect, logical_index: int) -> None:
+        painter.save()
+        super().paintSection(painter, rect, logical_index)
+        painter.restore()
+
+        if logical_index != _COL_CHECK:
+            return
+
+        cb_size = 13
+        x = rect.x() + (rect.width()  - cb_size) // 2
+        y = rect.y() + (rect.height() - cb_size) // 2
+
+        opt = QStyleOptionButton()
+        opt.rect = QRect(x, y, cb_size, cb_size)
+        opt.state = (
+            QStyle.StateFlag.State_Enabled |
+            (QStyle.StateFlag.State_On if self._checked else QStyle.StateFlag.State_Off)
+        )
+        self.style().drawControl(QStyle.ControlElement.CE_CheckBox, opt, painter)
+
+    def _on_section_clicked(self, logical_index: int) -> None:
+        if logical_index != _COL_CHECK:
+            return
+        self._checked = not self._checked
+        state = Qt.CheckState.Checked if self._checked else Qt.CheckState.Unchecked
+        table: QTableWidget = self.parent()  # type: ignore[assignment]
+        for row in range(table.rowCount()):
+            item = table.item(row, _COL_CHECK)
+            if item:
+                item.setCheckState(state)
+        self.viewport().update()
+
+    def set_all_checked(self, checked: bool) -> None:
+        """테이블 초기화 시 헤더 체크박스 상태를 동기화합니다."""
+        self._checked = checked
+        self.viewport().update()
 
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.current_mapping: dict[str, str] = {}   # {원본 변수명: 익명 변수명}
+        self.current_mapping: dict[str, str] = {}
         self.setWindowTitle("C++ Variable & Function Anonymizer")
         self.setMinimumSize(1280, 720)
         self.resize(1400, 800)
@@ -48,7 +98,6 @@ class MainWindow(QMainWindow):
     def _build_header(self) -> QHBoxLayout:
         header = QHBoxLayout()
 
-        # 타이틀 + 서브타이틀
         title_col = QVBoxLayout()
         title_col.setSpacing(2)
         app_title = QLabel("C++ Variable & Function Anonymizer")
@@ -100,14 +149,11 @@ class MainWindow(QMainWindow):
         splitter.setHandleWidth(8)
         splitter.setChildrenCollapsible(False)
 
-        # 왼쪽: 원본 코드 입력
         left_panel, self.input_edit = make_code_panel(
             "  INPUT — 원본 C++ 코드",
             "C++ 코드를 여기에 붙여넣으세요...",
         )
-        # 가운데: 매핑 테이블
         mid_widget = self._build_mapping_panel()
-        # 오른쪽: 익명화된 코드 출력 (LLM 결과 붙여넣기 가능)
         right_panel, self.output_edit = make_code_panel(
             "  OUTPUT — 익명화된 코드",
             "익명화된 코드가 여기에 표시됩니다...",
@@ -139,9 +185,14 @@ class MainWindow(QMainWindow):
         title_row.addWidget(self.btn_refresh)
         layout.addLayout(title_row)
 
-        # 테이블: 체크 / ORIGINAL / ANONYMIZED
+        # 테이블: ☑(헤더 전체선택) / ORIGINAL / ANONYMIZED
         self.table = QTableWidget(0, 3)
+
+        # 커스텀 헤더 교체 — 0번 컬럼에 전체선택 체크박스 렌더링
+        self._header = CheckableHeader(self.table)
+        self.table.setHorizontalHeader(self._header)
         self.table.setHorizontalHeaderLabels(["", "ORIGINAL", "ANONYMIZED"])
+
         hh = self.table.horizontalHeader()
         hh.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
         hh.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
@@ -192,11 +243,10 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage("⚠  입력 코드가 없습니다.")
             return
 
-        # 체크 여부 읽기
         checked: set[str] = set()
         unchecked: set[str] = set()
         for row in range(self.table.rowCount()):
-            chk_item = self.table.item(row, _COL_CHECK)
+            chk_item  = self.table.item(row, _COL_CHECK)
             orig_item = self.table.item(row, _COL_ORIG)
             if chk_item is None or orig_item is None:
                 continue
@@ -206,7 +256,6 @@ class MainWindow(QMainWindow):
             else:
                 unchecked.add(orig_name)
 
-        # 체크된 변수만 포함하는 부분 매핑으로 재치환
         active_mapping = {k: v for k, v in self.current_mapping.items() if k in checked}
 
         result = original
@@ -252,11 +301,13 @@ class MainWindow(QMainWindow):
         self.table.setRowCount(0)
         mono_font = QFont("JetBrains Mono, Consolas, Courier New", 10)
 
+        # 새 데이터 채울 때 헤더 체크박스 전체 선택 상태로 초기화
+        self._header.set_all_checked(True)
+
         for orig, alias in mapping.items():
             row = self.table.rowCount()
             self.table.insertRow(row)
 
-            # 체크박스 셀 (중앙 정렬)
             chk_item = QTableWidgetItem()
             chk_item.setCheckState(Qt.CheckState.Checked)
             chk_item.setFlags(Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled)

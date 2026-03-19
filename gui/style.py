@@ -108,7 +108,7 @@ QPushButton#clearBtn:hover {{
     border-color: {TEXT_MUTED};
 }}
 QPushButton#refreshBtn {{
-    color: {TEXT_MUTED};
+    color: {TEXT_PRIMARY};
 }}
 QPushButton#refreshBtn:hover {{
     color: {TEXT_PRIMARY};
