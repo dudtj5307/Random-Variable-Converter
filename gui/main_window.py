@@ -5,7 +5,10 @@ from PyQt6.QtWidgets import (
     QStyle, QStyleOptionButton,
 )
 from PyQt6.QtCore import Qt, QRect
-from PyQt6.QtGui import QFont, QColor, QPainter
+from PyQt6.QtGui import (
+    QFont, QColor, QPainter,
+    QTextCharFormat, QTextCursor,
+)
 import re
 
 from gui.style import ACCENT, ORANGE, BORDER_COLOR, GREEN, DARK_BG, TEXT_PRIMARY, PANEL_BG, TEXT_MUTED, STYLE
@@ -16,11 +19,13 @@ _COL_CHECK = 0
 _COL_ORIG  = 1
 _COL_ALIAS = 2
 
+# 하이라이트 색상
+_HL_BG   = "#3a3000"   # 어두운 황색 배경
+_HL_FG   = "#ffd700"   # 밝은 황색 글씨
+
 
 class CheckableHeader(QHeaderView):
-    """
-    0번 컬럼 헤더에 체크박스를 그려 전체 선택/해제를 토글합니다.
-    """
+    """0번 컬럼 헤더에 체크박스를 그려 전체 선택/해제를 토글합니다."""
 
     def __init__(self, parent: QTableWidget) -> None:
         super().__init__(Qt.Orientation.Horizontal, parent)
@@ -61,7 +66,6 @@ class CheckableHeader(QHeaderView):
         self.viewport().update()
 
     def set_all_checked(self, checked: bool) -> None:
-        """테이블 초기화 시 헤더 체크박스 상태를 동기화합니다."""
         self._checked = checked
         self.viewport().update()
 
@@ -169,7 +173,6 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
 
-        # 타이틀 행 (레이블 + 갱신 버튼)
         title_row = QHBoxLayout()
         mid_title = QLabel("  MAPPING — 변수명/함수명 매핑")
         mid_title.setObjectName("panelTitle")
@@ -183,10 +186,8 @@ class MainWindow(QMainWindow):
         title_row.addWidget(self.btn_refresh)
         layout.addLayout(title_row)
 
-        # 테이블: ☑(헤더 전체선택) / ORIGINAL / ANONYMIZED
         self.table = QTableWidget(0, 3)
 
-        # 커스텀 헤더 교체 — 0번 컬럼에 전체선택 체크박스 렌더링
         self._header = CheckableHeader(self.table)
         self.table.setHorizontalHeader(self._header)
         self.table.setHorizontalHeaderLabels(["", "ORIGINAL", "ANONYMIZED"])
@@ -200,6 +201,10 @@ class MainWindow(QMainWindow):
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setAlternatingRowColors(False)
+
+        # 더블클릭 → 양쪽 텍스트 하이라이트
+        self.table.cellDoubleClicked.connect(self._on_cell_double_clicked)
+
         layout.addWidget(self.table)
 
         self.count_label = QLabel("변환된 변수: 0개  ")
@@ -222,6 +227,7 @@ class MainWindow(QMainWindow):
 
         self.output_edit.setPlainText(anonymized)
         self._populate_table(mapping)
+        self._clear_highlights()
 
         n = len(mapping)
         self.count_label.setText(f"변환된 변수: {n}개  ")
@@ -231,7 +237,6 @@ class MainWindow(QMainWindow):
         )
 
     def _on_refresh(self) -> None:
-        """체크된 항목만 익명화, 해제된 항목은 원본명 그대로 OUTPUT 재생성."""
         if not self.current_mapping:
             self.status_bar.showMessage("⚠  먼저 익명화를 수행해야 합니다.")
             return
@@ -261,6 +266,7 @@ class MainWindow(QMainWindow):
             result = re.sub(r'\b' + re.escape(orig) + r'\b', alias, result)
 
         self.output_edit.setPlainText(result)
+        self._clear_highlights()
 
         skipped = len(unchecked)
         applied = len(active_mapping)
@@ -281,6 +287,7 @@ class MainWindow(QMainWindow):
 
         restored = restore_code(anonymized_result, self.current_mapping)
         self.input_edit.setPlainText(restored)
+        self._clear_highlights()
         self.status_bar.showMessage(
             "✓  복원 완료 — 왼쪽 창에서 원본 변수명으로 복원된 코드를 확인하세요."
         )
@@ -291,15 +298,73 @@ class MainWindow(QMainWindow):
         self.table.setRowCount(0)
         self.current_mapping = {}
         self.count_label.setText("변환된 변수: 0개  ")
+        self._clear_highlights()
         self.status_bar.showMessage("초기화되었습니다.")
 
+    def _on_cell_double_clicked(self, row: int, col: int) -> None:
+        """더블클릭한 행의 원본명/익명명을 양쪽 편집기에서 하이라이트합니다."""
+        chk_item   = self.table.item(row, _COL_CHECK)
+        orig_item  = self.table.item(row, _COL_ORIG)
+        alias_item = self.table.item(row, _COL_ALIAS)
+        if orig_item is None or alias_item is None:
+            return
+
+        orig_word  = orig_item.text()
+        alias_word = alias_item.text()
+
+        # 체크 해제된 항목은 output에도 원본명 그대로 남아 있으므로 orig_word로 검색
+        is_checked = (
+            chk_item is not None
+            and chk_item.checkState() == Qt.CheckState.Checked
+        )
+        output_word = alias_word if is_checked else orig_word
+
+        self._clear_highlights()
+        self._highlight_word(self.input_edit,  orig_word)
+        self._highlight_word(self.output_edit, output_word)
+
+        if is_checked:
+            msg = f"🔍  '{orig_word}'  →  '{alias_word}'  하이라이트 중"
+        else:
+            msg = f"🔍  '{orig_word}'  (익명화 제외 — 양쪽 모두 원본명으로 표시)  하이라이트 중"
+        self.status_bar.showMessage(msg + " — 다른 행 더블클릭 시 전환됩니다.")
+
     # ── 내부 헬퍼 ─────────────────────────────────────────────────────────────
+
+    def _highlight_word(self, editor, word: str) -> None:
+        """editor 안에서 word와 일치하는 모든 토큰을 ExtraSelection으로 강조합니다."""
+        fmt = QTextCharFormat()
+        fmt.setBackground(QColor(_HL_BG))
+        fmt.setForeground(QColor(_HL_FG))
+        fmt.setFontWeight(QFont.Weight.Bold)
+
+        selections = []
+        doc = editor.document()
+        cursor = QTextCursor(doc)
+
+        pattern = re.compile(r'\b' + re.escape(word) + r'\b')
+        full_text = editor.toPlainText()
+
+        for m in pattern.finditer(full_text):
+            sel = editor.ExtraSelection()  # type: ignore[attr-defined]
+            c = QTextCursor(doc)
+            c.setPosition(m.start())
+            c.setPosition(m.end(), QTextCursor.MoveMode.KeepAnchor)
+            sel.cursor = c
+            sel.format = fmt
+            selections.append(sel)
+
+        editor.setExtraSelections(selections)
+
+    def _clear_highlights(self) -> None:
+        """양쪽 편집기의 하이라이트를 모두 제거합니다."""
+        self.input_edit.setExtraSelections([])
+        self.output_edit.setExtraSelections([])
 
     def _populate_table(self, mapping: dict[str, str]) -> None:
         self.table.setRowCount(0)
         mono_font = QFont("JetBrains Mono, Consolas, Courier New", 10)
 
-        # 새 데이터 채울 때 헤더 체크박스 전체 선택 상태로 초기화
         self._header.set_all_checked(True)
 
         for orig, alias in mapping.items():

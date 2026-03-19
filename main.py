@@ -6,7 +6,7 @@ from PyQt6.QtGui import QColor, QPalette
 from gui import MainWindow
 from gui.style import DARK_BG, PANEL_BG, TEXT_PRIMARY
 
-LAST_UPDATE, VERSION = "2026.03.20", "BETA"
+LAST_UPDATE, VERSION = "2026.03.20", "*BETA*"
 
 def main() -> None:
     app = QApplication(sys.argv)
