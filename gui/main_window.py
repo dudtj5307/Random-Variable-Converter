@@ -165,6 +165,11 @@ class MainWindow(QMainWindow):
         splitter.addWidget(mid_widget)
         splitter.addWidget(right_panel)
         splitter.setSizes([500, 300, 500])
+
+        # 좌우 스크롤바 동기화
+        self._syncing_scroll = False
+        self._connect_scroll_sync()
+
         return splitter
 
     def _build_mapping_panel(self) -> QWidget:
@@ -355,6 +360,26 @@ class MainWindow(QMainWindow):
             selections.append(sel)
 
         editor.setExtraSelections(selections)
+
+    def _connect_scroll_sync(self) -> None:
+        """좌우 편집기 스크롤바를 양방향으로 동기화합니다."""
+        in_v  = self.input_edit.verticalScrollBar()
+        out_v = self.output_edit.verticalScrollBar()
+        in_h  = self.input_edit.horizontalScrollBar()
+        out_h = self.output_edit.horizontalScrollBar()
+
+        in_v.valueChanged.connect(lambda v: self._sync_scroll(out_v, v))
+        out_v.valueChanged.connect(lambda v: self._sync_scroll(in_v,  v))
+        in_h.valueChanged.connect(lambda v: self._sync_scroll(out_h, v))
+        out_h.valueChanged.connect(lambda v: self._sync_scroll(in_h,  v))
+
+    def _sync_scroll(self, target, value: int) -> None:
+        """재귀 호출 없이 상대 스크롤바 값을 동기화합니다."""
+        if self._syncing_scroll:
+            return
+        self._syncing_scroll = True
+        target.setValue(value)
+        self._syncing_scroll = False
 
     def _clear_highlights(self) -> None:
         """양쪽 편집기의 하이라이트를 모두 제거합니다."""
