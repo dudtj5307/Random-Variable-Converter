@@ -43,7 +43,7 @@ QTableWidget {{
     font-size: 12px;
 }}
 QTableWidget::item {{
-    padding: 6px 10px;
+    padding: 2px 6px;
     border: none;
 }}
 QTableWidget::item:selected {{
@@ -107,6 +107,16 @@ QPushButton#clearBtn:hover {{
     color: {TEXT_PRIMARY};
     border-color: {TEXT_MUTED};
 }}
+QPushButton#refreshBtn {{
+    color: {TEXT_MUTED};
+}}
+QPushButton#refreshBtn:hover {{
+    color: {TEXT_PRIMARY};
+    background: rgba(79,156,249,0.12);
+}}
+QPushButton#refreshBtn:pressed {{
+    background: rgba(79,156,249,0.22);
+}}
 QLabel#panelTitle {{
     color: {TEXT_MUTED};
     font-size: 10px;
@@ -151,7 +161,7 @@ QSplitter::handle {{
 }}
 QScrollBar:vertical {{
     background: {PANEL_BG};
-    width: 8px;
+    width: 12px;
     border-radius: 4px;
 }}
 QScrollBar::handle:vertical {{

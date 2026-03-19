@@ -9,7 +9,7 @@ from gui.style import DARK_BG, PANEL_BG, TEXT_PRIMARY
 
 def main() -> None:
     app = QApplication(sys.argv)
-    app.setApplicationName("C++ Variable Anonymizer")
+    app.setApplicationName("C++ Variable & Function Anonymizer")
 
     # 다크 팔레트 강제 적용
     palette = QPalette()

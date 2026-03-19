@@ -5,7 +5,7 @@ from utils.extractor import extract_declared_variables
 
 def generate_alias(index: int) -> str:
     """순번 기반 익명 변수명 생성: randomVariable1, randomVariable2, ..."""
-    return f"randomVariable{index + 1}"
+    return f"anonymousName{index + 1}"
 
 
 def anonymize_code(original_code: str) -> tuple[str, dict[str, str]]:
@@ -23,7 +23,7 @@ def anonymize_code(original_code: str) -> tuple[str, dict[str, str]]:
     declared = extract_declared_variables(original_code)
 
     # 1글자 이하·키워드는 제외
-    declared = {v for v in declared if v not in CPP_KEYWORDS and len(v) >= 2}
+    declared = {v for v in declared if v not in CPP_KEYWORDS and len(v) >= 1}
 
     # 코드에서 처음 등장하는 순서대로 번호 부여
     order: list[str] = []

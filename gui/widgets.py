@@ -1,6 +1,23 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QTextEdit
-from PyQt6.QtGui import QTextOption
+from PyQt6.QtGui import QTextOption, QFont
+from PyQt6.QtCore import QMimeData
+
 from gui.style import TEXT_MUTED
+
+# 고정 폰트 크기 (QSS 상속 무시하고 코드에서 직접 고정)
+_CODE_FONT_SIZE = 13
+
+
+class PlainPasteEdit(QTextEdit):
+    """
+    붙여넣기 시 서식을 제거하고 순수 텍스트만 삽입하는 QTextEdit.
+    웹페이지·리치텍스트 복사본의 HTML/CSS가 그대로 들어오는 문제를 차단합니다.
+    """
+
+    def insertFromMimeData(self, source: QMimeData) -> None:  # type: ignore[override]
+        if source.hasText():
+            self.insertPlainText(source.text())
+        # HTML/image 등 다른 형식은 무시
 
 
 def make_code_panel(title: str, placeholder: str) -> tuple[QWidget, QTextEdit]:
@@ -25,9 +42,16 @@ def make_code_panel(title: str, placeholder: str) -> tuple[QWidget, QTextEdit]:
     label.setObjectName("panelTitle")
     layout.addWidget(label)
 
-    edit = QTextEdit()
+    edit = PlainPasteEdit()
     edit.setPlaceholderText(placeholder)
     edit.setWordWrapMode(QTextOption.WrapMode.NoWrap)
+
+    # QSS font-size가 외부 스타일시트에 의해 덮어쓰이지 않도록 코드에서도 고정
+    font = QFont("JetBrains Mono, Consolas, Courier New")
+    font.setPointSize(_CODE_FONT_SIZE)
+    font.setStyleHint(QFont.StyleHint.Monospace)
+    edit.setFont(font)
+
     layout.addWidget(edit)
 
     return widget, edit
