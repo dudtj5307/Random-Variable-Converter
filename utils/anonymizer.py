@@ -1,7 +1,8 @@
 import re
-from utils.keywords import CPP_KEYWORDS, IDENTIFIER_RE
-from utils.extractor import extract_declared_variables
+from utils.keywords import CPP_KEYWORDS
 
+IDENTIFIER_RE: re.Pattern = re.compile(r'\b([A-Za-z_][A-Za-z0-9_]*)\b')
+from utils.extractor import extract_declared_variables
 
 def generate_alias(index: int) -> str:
     """순번 기반 익명 변수명 생성: randomVariable1, randomVariable2, ..."""
