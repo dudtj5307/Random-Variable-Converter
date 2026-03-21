@@ -66,12 +66,12 @@ QPushButton#convertBtn {{
         stop:0 {ACCENT}, stop:1 #6366f1);
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 10px 28px;
+    border-radius: 20px;
+    padding: 10px 26px;
     font-size: 13px;
     font-weight: bold;
     font-family: 'Segoe UI', sans-serif;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
 }}
 QPushButton#convertBtn:hover {{
     background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
@@ -79,40 +79,53 @@ QPushButton#convertBtn:hover {{
 }}
 QPushButton#convertBtn:pressed {{
     background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-        stop:0 #3b82f6, stop:1 #6366f1);
+        stop:0 #2563eb, stop:1 #4f46e5);
 }}
 QPushButton#restoreBtn {{
-    background: transparent;
-    color: {GREEN};
-    border: 1px solid {GREEN};
-    border-radius: 8px;
-    padding: 10px 20px;
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
+        stop:0 #16a34a, stop:1 #15803d);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 10px 26px;
     font-size: 13px;
     font-weight: bold;
     font-family: 'Segoe UI', sans-serif;
+    letter-spacing: 0.3px;
 }}
 QPushButton#restoreBtn:hover {{
-    background: rgba(34,197,94,0.1);
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
+        stop:0 #22c55e, stop:1 #16a34a);
+}}
+QPushButton#restoreBtn:pressed {{
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
+        stop:0 #15803d, stop:1 #166534);
 }}
 QPushButton#clearBtn {{
-    background: transparent;
+    background: rgba(255,255,255,0.04);
     color: {TEXT_MUTED};
     border: 1px solid {BORDER_COLOR};
-    border-radius: 8px;
-    padding: 10px 16px;
+    border-radius: 20px;
+    padding: 10px 20px;
     font-size: 12px;
     font-family: 'Segoe UI', sans-serif;
 }}
 QPushButton#clearBtn:hover {{
+    background: rgba(255,255,255,0.08);
     color: {TEXT_PRIMARY};
     border-color: {TEXT_MUTED};
 }}
 QPushButton#refreshBtn {{
     color: {TEXT_PRIMARY};
+    border: 1px solid {BORDER_COLOR};
+    border-radius: 12px;
+    padding: 2px 10px;
+    background: transparent;
 }}
 QPushButton#refreshBtn:hover {{
-    color: {TEXT_PRIMARY};
-    background: rgba(79,156,249,0.12);
+    color: {ACCENT};
+    border-color: {ACCENT};
+    background: rgba(79,156,249,0.08);
 }}
 QPushButton#refreshBtn:pressed {{
     background: rgba(79,156,249,0.22);

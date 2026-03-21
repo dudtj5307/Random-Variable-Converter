@@ -111,16 +111,16 @@ class MainWindow(QMainWindow):
         title_col.addWidget(app_title)
         title_col.addWidget(subtitle)
 
-        self.btn_convert = QPushButton("익명화 ⟶")
+        self.btn_convert = QPushButton("익명화   ▶")
         self.btn_convert.setObjectName("convertBtn")
         self.btn_convert.setFixedHeight(40)
-        self.btn_convert.setFixedWidth(120)
+        self.btn_convert.setMinimumWidth(80)
         self.btn_convert.clicked.connect(self._on_convert)
 
-        self.btn_restore = QPushButton("⟵ 복호화")
+        self.btn_restore = QPushButton("◀   복호화")
         self.btn_restore.setObjectName("restoreBtn")
         self.btn_restore.setFixedHeight(40)
-        self.btn_restore.setFixedWidth(120)
+        self.btn_restore.setMinimumWidth(80)
         self.btn_restore.clicked.connect(self._on_restore)
 
         self.btn_clear = QPushButton("초기화")
@@ -189,6 +189,7 @@ class MainWindow(QMainWindow):
         title_row.addWidget(mid_title)
         title_row.addStretch()
         title_row.addWidget(self.btn_refresh)
+        title_row.addSpacing(6)
         layout.addLayout(title_row)
 
         self.table = QTableWidget(0, 3)
