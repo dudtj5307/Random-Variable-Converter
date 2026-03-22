@@ -1,5 +1,5 @@
 import re
-from utils.keywords import CPP_KEYWORDS
+from utils.keywords import CPP_KEYWORDS, CSHARP_KEYWORDS
 
 IDENTIFIER_RE: re.Pattern = re.compile(r'\b([A-Za-z_][A-Za-z0-9_]*)\b')
 from utils.extractor import extract_declared_variables

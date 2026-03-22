@@ -1,5 +1,5 @@
 import re
-from utils.keywords import CPP_KEYWORDS
+from utils.keywords import CPP_KEYWORDS, CSHARP_KEYWORDS
 
 
 # ── 문자열·주석 제거용 패턴 ─────────────────────────────────────────────────
